@@ -1,5 +1,5 @@
-resource "aws_security_group" "lb" {
-  name   = format("%s-load-balancer", var.project_name)
+resource "aws_security_group" "lb_internal" {
+  name   = format("%s-internal", var.project_name)
   vpc_id = data.aws_ssm_parameter.vpc.value
 
   egress {
@@ -10,50 +10,50 @@ resource "aws_security_group" "lb" {
   }
 }
 
-resource "aws_security_group_rule" "ingress_80" {
+resource "aws_security_group_rule" "internal_ingress_80" {
   cidr_blocks       = ["0.0.0.0/0"]
   from_port         = 80
   to_port           = 80
   description       = "Liberando porta 80"
   protocol          = "tcp"
-  security_group_id = aws_security_group.lb.id
+  security_group_id = aws_security_group.lb_internal.id
   type              = "ingress"
 }
 
-resource "aws_security_group_rule" "ingress_443" {
+resource "aws_security_group_rule" "internal_ingress_443" {
   cidr_blocks       = ["0.0.0.0/0"]
   from_port         = 443
   to_port           = 443
   description       = "Liberando porta 443"
   protocol          = "tcp"
-  security_group_id = aws_security_group.lb.id
+  security_group_id = aws_security_group.lb_internal.id
   type              = "ingress"
 }
 
-resource "aws_lb" "main" {
-  name               = format("%s-ingress", var.project_name)
-  internal           = var.load_balancer_internal
-  load_balancer_type = var.load_balancer_type
-  security_groups    = [aws_security_group.lb.id]
+resource "aws_lb" "lb_internal" {
+  name               = format("%s-internal", var.project_name)
+  internal           = true
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.lb_internal.id]
   subnets = [
-    data.aws_ssm_parameter.public_subnet_1a.value,
-    data.aws_ssm_parameter.public_subnet_1b.value,
-    data.aws_ssm_parameter.public_subnet_1c.value
+    data.aws_ssm_parameter.private_subnet_1a.value,
+    data.aws_ssm_parameter.private_subnet_1b.value,
+    data.aws_ssm_parameter.private_subnet_1c.value
   ]
 
   enable_cross_zone_load_balancing = false
   enable_deletion_protection       = false
 }
 
-resource "aws_lb_listener" "main" {
-  load_balancer_arn = aws_lb.main.arn
+resource "aws_lb_listener" "internal" {
+  load_balancer_arn = aws_lb.lb_internal.arn
   port              = 80
   protocol          = "HTTP"
   default_action {
     type = "fixed-response"
     fixed_response {
       content_type = "text/plain"
-      message_body = "Curso LinuxTips"
+      message_body = "LinuxTips Internal"
       status_code  = "200"
     }
   }
