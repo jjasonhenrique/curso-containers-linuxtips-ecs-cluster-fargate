@@ -33,3 +33,8 @@ output "service_connect_ssm" {
 output "service_connect_name_ssm" {
   value = aws_ssm_parameter.service_connect_name.id
 }
+
+output "vpclink" {
+  description = "ID do VPC Link do Cluster"
+  value = aws_ssm_parameter.vpclink.id
+}
